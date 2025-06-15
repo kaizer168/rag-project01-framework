@@ -6,6 +6,8 @@ import logging
 import os
 from datetime import datetime
 import json
+import requests
+import pypdfium2
 
 logger = logging.getLogger(__name__)
 """
@@ -56,6 +58,8 @@ class LoadingService:
                 return self._load_with_pymupdf(file_path)
             elif method == "pypdf":
                 return self._load_with_pypdf(file_path)
+            elif method == "pypdfium2":
+                return self._load_with_pypdfium2(file_path)
             elif method == "pdfplumber":
                 return self._load_with_pdfplumber(file_path)
             elif method == "unstructured":
@@ -146,6 +150,29 @@ class LoadingService:
             logger.error(f"PyPDF error: {str(e)}")
             raise
     
+    def _load_with_pypdfium2(self, file_path: str) -> str:
+        try:
+            text_blocks = []
+            pdf = pypdfium2.PdfDocument(file_path)
+            self.total_pages = len(pdf)
+
+            for page_num in range(len(pdf)):
+                page = pdf[page_num]
+                textpage = page.get_textpage()
+                text = textpage.get_text_range()
+                if text.strip():
+                    text_blocks.append({
+                        "text": text.strip(),
+                        "page": page_num + 1
+                    })
+
+            self.current_page_map = text_blocks
+            return "\n".join(block["text"] for block in text_blocks)
+
+        except Exception as e:
+            logger.error(f"PyPDFium2 error: {str(e)}")
+            raise
+
     def _load_with_unstructured(self, file_path: str, strategy: str = "fast", chunking_strategy: str = "basic", chunking_options: dict = None) -> str:
         """
         使用unstructured库加载PDF文档。
