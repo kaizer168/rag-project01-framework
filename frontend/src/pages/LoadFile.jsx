@@ -253,7 +253,8 @@ const LoadFile = () => {
                 className="block w-full p-2 border rounded"
               >
                 <option value="pymupdf">PyMuPDF</option>
-                <option value="pypdf">PyPDF</option>
+                <option value="pypdf">PyPDF</option>      
+                <option value="pdfplumber">PDFPlumber</option>          
                 <option value="unstructured">Unstructured</option>
               </select>
             </div>
