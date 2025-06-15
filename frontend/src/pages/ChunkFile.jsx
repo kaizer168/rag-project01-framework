@@ -296,6 +296,7 @@ const ChunkFile = () => {
                 <option value="fixed_size">Fixed Size</option>
                 <option value="by_paragraphs">By Paragraphs</option>
                 <option value="by_sentences">By Sentences</option>
+                <option value="by_title">By Title</option>
               </select>
             </div>
 

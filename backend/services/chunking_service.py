@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import re 
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,20 @@ class ChunkingService:
                 splitter_method = self._paragraph_chunks if method == "by_paragraphs" else self._sentence_chunks
                 for page_data in page_map:
                     page_chunks = splitter_method(page_data['text'])
+                    for chunk in page_chunks:
+                        chunk_metadata = {
+                            "chunk_id": len(chunks) + 1,
+                            "page_number": page_data['page'],
+                            "page_range": str(page_data['page']),
+                            "word_count": len(chunk["text"].split())
+                        }
+                        chunks.append({
+                            "content": chunk["text"],
+                            "metadata": chunk_metadata
+                        })
+            elif method == "by_title":
+                for page_data in page_map:
+                    page_chunks = self._title_chunks(page_data['text'])
                     for chunk in page_chunks:
                         chunk_metadata = {
                             "chunk_id": len(chunks) + 1,
@@ -165,3 +180,23 @@ class ChunkingService:
         )
         texts = splitter.split_text(text)
         return [{"text": t} for t in texts]
+    
+    def _title_chunks(self, text: str) -> list[dict]:
+        """
+        按标题进行分块（基于编号或 Markdown 样式）
+
+        Returns:
+            list[dict]: 每个包含标题段的块
+        """
+        # 常见标题匹配：1.、1.1、Chapter 1、## 等
+        pattern = re.compile(r'(?=(?:^|\n)(?:#{1,6}\s+|Chapter\s+\d+|[0-9]+\.[0-9]*\s+|[0-9]+\s+))', re.IGNORECASE)
+        matches = list(pattern.finditer(text))
+
+        chunks = []
+        for i, match in enumerate(matches):
+            start = match.start()
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            chunk_text = text[start:end].strip()
+            if chunk_text:
+                chunks.append({"text": chunk_text})
+        return chunks
